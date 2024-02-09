@@ -232,7 +232,8 @@ class Obfuscator(NodeTransformer):
 
     def __init__(
         self,
-        filename: str,
+        filename: str = None,
+        str_code: str = None,
         output_filename: str = None,
         level: int = 6,
         names: Dict[str, Name] = {},
@@ -242,6 +243,7 @@ class Obfuscator(NodeTransformer):
         names_size: int = 12,
     ):
         self.filename = filename
+        self.str_code = str_code
         self.output_filename = output_filename or f"{splitext(filename)[0]}_obfu.py"
         self.level = level
         self.deobfuscate = deobfuscate
@@ -307,10 +309,13 @@ class Obfuscator(NodeTransformer):
         This function returns content and AST from python file.
         """
 
-        with open(self.filename, encoding=self.encoding) as file:
-            code = self.code = file.read()
+        if(self.filename):
+            with open(self.filename, encoding=self.encoding) as file:
+                code = self.code = file.read()
 
-        debug(f"Get code from {self.filename!r}")
+            debug(f"Get code from {self.filename!r}")
+        else:
+            code = self.code = self.str_code
 
         astcode = self.astcode = parse(code)
         return code, astcode
@@ -368,10 +373,11 @@ class Obfuscator(NodeTransformer):
         if code is None:
             raise RuntimeError("Code is not defined")
 
-        with open(self.output_filename, "w", encoding=self.encoding) as file:
-            file.write(code)
+        if(self.filename):
+            with open(self.output_filename, "w", encoding=self.encoding) as file:
+                file.write(code)
 
-        debug(f"Write obfuscate code in {self.output_filename}")
+            debug(f"Write obfuscate code in {self.output_filename}")
 
         return code
 
@@ -806,6 +812,9 @@ class Obfuscator(NodeTransformer):
         self.code = self.hexadecimal(code)
         code = self.write_code()
         self.write_deobfuscate()
+
+    def get_obfuscated_code(self):
+        return self.code
 
     def get_attributes_from(self, new_ast: AST, old_ast: AST) -> AST:
         """
